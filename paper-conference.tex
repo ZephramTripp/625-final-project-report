@@ -9,7 +9,7 @@
 
 % DO NOT DOWNLOAD IEEEtran.cls - Use the one of your LaTeX distribution
 % For the final version, replace "draftcls" by "final"
-\documentclass[conference,a4paper]{IEEEtran}[2015/08/26]
+\documentclass[conference,letter]{IEEEtran}[2015/08/26]
 
 % Balance the last page
 % The pbalance package (see https://ctan.org/pkg/pbalance) "just works" (in contrast to balance.sty or other solutions)
@@ -380,13 +380,13 @@
 \section{Introduction}
 \label{sec:introduction}
 
-In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow. 
-Our goal was to explore this new flow, and compare its performance with the Vivado IP flow.  
+In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow.
+Our goal was to explore this new flow, and compare its performance with the Vivado IP flow.
 
 \section{knn Algorithm}
 \label{sec:knn-algorithm}
 
-The algorithm we chose to implement for this project was the \textit{k}-nearest neighbors algorithm for image recognition.
+The algorithm we chose to implement for this project was the \textit{k}-nearest neighbors algorithm for image recognition. To prepare the test set, images of each item to identify are scanned, identified, and each pixel is converted to a 0 or a 1. Each tested image is processed in the same way. We used the training and test data from labs 4 and 5. For these labs, we used the \textit{k}-nearest neighbors algorithm to identify images of the Hindu-Arabic numerals 0-9. For a particular test case, it is compared against each image in the data set to find the lowest Hamming distances between images, until we find the \textit{k} smallest Hamming distances for each numeral. Then from among these 10\textit{k} items, the lowest \textit{k} elements become the voters that decide what the result should be, with ties being broken arbitrarily.
 
 \section{Approaches}
 \label{sec:approaches}
@@ -414,19 +414,20 @@ For the Vivado IP Flow, we explored six different designs:
 \section{Results}
 \label{sec:results}
 
-\begin{figure}
-    \centering
-    \begin{tabular}{l|lll}
-      \toprule
-      Method & Accuracy & Cycles & Speedup \\
-      \midrule
-      Software + DRAM   & 86\%  & 292055943513  & 1x    \\
-      Optimized Software + DRAM   & 86\%  & 131920654992 & 2.21x     \\
-      Hardware & 89\% & 1883135 & 155090.28x \\
-      \bottomrule
-    \end{tabular}
-    \caption{Results of Vivado IP flow}
-    \label{tab:ex:cref}
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{c|ccc}
+    \toprule
+    Method    & Accuracy & Cycles (millions) & Speedup \\
+    \midrule
+    Software  & 86\%     & 292056            & 1x      \\
+    Optimized & 86\%     & 131921            & 2.21x   \\
+    Hardware  & 89\%     & 1.88              & 155090x \\
+    DRAM      & 89\%     & 16.2              & 18076x  \\
+    \bottomrule
+  \end{tabular}
+  \caption{Results of Vivado IP flow}
+  \label{tab:ex:cref}
 \end{figure}
 
 \section{Conclusion}
