@@ -380,14 +380,22 @@
 \section{Introduction}
 \label{sec:introduction}
 
-In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow.
-Our first goal was to explore this new flow, and compare its performance with the Vivado IP flow when they are used to implement a simple knn algorithm.
-The second goal was to explore different memory implementations of this algorithm using the resources found in the Alveo U280 Data Center Accelerator Card.
+As hardware designs become more complex, and the allure of hardware acceleration on platforms like field-programmable gate arrays (FPGAs) becomes more attractive to corporations and others seeking to maximize the performance of their algorithms, it becomes necessary for tools to be developed that allow for more effective use of hardware acceleration. One of the tools used in this regard is Vitis HLS, Xilinx's proprietary high-level synthesis tool, which uses C++ code along with a few simple preprocessor directives called pragmas to create hardware designs on a higher, more conceptual level. In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow.
+Our first goal for our project was to explore this new flow and compare its performance with the Vivado IP flow when they are used to implement a simple knn algorithm.
+The second goal was to explore different memory implementations of this algorithm using the resources found in the Xilinx Alveo U280 Data Center Accelerator Card.
 
 \section{knn Algorithm}
 \label{sec:knn-algorithm}
 
-The algorithm we chose to implement for this project was the \textit{k}-nearest neighbors algorithm for image recognition. To prepare the test set, images of each item to identify are scanned, identified, and each pixel is converted to a 0 or a 1. Each tested image is processed in the same way. We used the training and test data from labs 4 and 5. For these labs, we used the \textit{k}-nearest neighbors algorithm to identify images of the Hindu-Arabic numerals 0-9. For a particular test case, it is compared against each image in the data set to find the lowest Hamming distances between images, until we find the \textit{k} smallest Hamming distances between images for each numeral. Then from among these 10\textit{k} items, the lowest \textit{k} elements become the voters that decide what the result should be, with ties being broken arbitrarily. The algorithm we used had an accuracy of 86\% for the test data set when implemented in software, and an 89\% accuracy when implemented in hardware. Our goal was not to optimize this accuracy, but to test the performance of the algorithm with seven different implementations.
+The algorithm we chose to implement for this project was the \textit{k}-nearest neighbors algorithm for image recognition, as depicted in figure \ref{fig:ex:knn}. To prepare the test set, images of each item to identify are scanned, identified, and each pixel is converted to a 0 or a 1. Each tested image is processed in the same way. We used the training and test data from labs 4 and 5. For these labs, we used the \textit{k}-nearest neighbors algorithm to identify images of the Hindu-Arabic numerals 0-9. For a particular test case, it is compared against each image in the data set to find the lowest Hamming distances between images, until we find the \textit{k} smallest Hamming distances between images for each numeral. Then from among these 10\textit{k} items, the lowest \textit{k} elements become the voters that decide what the result should be, with ties being broken arbitrarily. The algorithm we used had an accuracy of 86\% for the test data set when implemented in software, and an 89\% accuracy when implemented in hardware. Our goal was not to optimize this accuracy, but to test the performance of the algorithm with several different implementations.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\linewidth]{knearestneighbors.png}
+  \caption{Example of knn algorithm with all elements within a circle representing the voters at that value of k for the test object (green)}
+  \label{fig:ex:knn}
+\end{figure}
+
 
 \section{Approaches}
 \label{sec:approaches}
@@ -396,13 +404,27 @@ To implement the \textit{k}-nearest neighbors algorithm on the board and acceler
 
 \subsection{Vitis Kernel Flow}
 
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\linewidth]{vitiskernelflow.png}
+  \caption{Diagram of the Vitis Kernel Flow, from Xilinx}
+  \label{fig:ex:vitiskernelflow}
+\end{figure}
+
 The approach we most wanted to explore for this project was the Vitis Kernel Flow. The documentation surrounding this new flow is scattered at best, but we did our best to try and find how to use it properly.
 
 According to the documentation maintained by Xilinx, the goal of the Vitis Kernel Flow is to offer the opportunity for FPGAs to be reconfigured similarly to the kernels of a GPU. When using the Xilinx Kernel Flow, you first install a platform onto the board that serves as the base for kernel implementation. The platform we used was specific to the Alveo board, and we obtained it from Xilinx's website. Derived from this platform is a Xilinx Executable Binary file, which serves as the executable for the FPGA. The kernel is then linked into this executable at the time it is written to the board, so this effectively replaces the normal bitstream that would be programmed to the board. The kernels you write for the Vitis Kernel Flow must meet a few requirements as described in Xilinx's documentation. All Xilinx Runtime managed kernels must have at least one clock input and at least one slave Advanced eXtensible Interface Lite (AXI4-Lite) port, and there are required control registers as well. However, almost all of these requirements can be optional if you choose to create a user-managed kernel. However, you must then choose how to start and stop the kernel yourself. We decided to try to create an XRT-managed kernel for this project.
 
-The Xilinx Runtime Library or XRT is a combination of Linux kernel drivers and userspace code that allows a host machine to communicated over PCIe with the FPGA board. This allows for easy control of the platform and the kernels added to it. This was one of the more complex parts of our project to use, as we didn't realize we would need to install kernel drivers on our Linux machine in order to use the Vitis Kernel Flow. After we had installed these drivers, we ended up having to have our machine run with Secure Boot disabled in order allow all of Xilinx's custom kernel drivers to work. After install all these kernel drivers and the rest of the XRT, we were able to install the platform onto the Alveo board. We were then able to run all the verification tests provided in that code to prove the flow was working correctly. After this point, we attempted to create our own kernel, implementing the \textit{k}-nearest neighbors algorithm. Once we created the Xilinx Kernel file from Vitis HLS, we learned that we would need a host-side C++ program that would control the kernel. We wrote a quick host application, and ran it on the Alveo board, to no avail. After trying several other methods, we moved on to exploring other methods of using the Alveo board for the knn algorithm.
+The Xilinx Runtime Library or XRT is a combination of Linux kernel drivers and userspace code that allows a host machine to communicated over PCIe with the FPGA board. This allows for easy control of the platform and the kernels added to it. This was one of the more complex parts of our project to use, as we did not realize we would need to install kernel drivers on our Linux machine in order to use the Vitis Kernel Flow. After we had installed these drivers, we ended up having to have our machine run with Secure Boot disabled in order to allow all of Xilinx's custom kernel drivers to work. After installing all these kernel drivers and the rest of the XRT, we were able to install the platform onto the Alveo board. We were then able to run all the verification tests provided in that code to prove the flow was working correctly. After this point, we attempted to create our own kernel, implementing the \textit{k}-nearest neighbors algorithm. Once we created the Xilinx Kernel file from Vitis HLS, we learned that we would need a host-side C++ program that would control the kernel. We wrote a quick host application, and ran it on the Alveo board, to no avail. After trying several other methods, we moved on to exploring other methods of using the Alveo board for the knn algorithm.
 
 \subsection{Vivado IP Flow}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.75\linewidth]{vivadoipflow.png}
+  \caption{Diagram of the Vivado IP Flow, from Xilinx}
+  \label{fig:ex:vivadoipflow}
+\end{figure}
 
 The Vivado IP Flow functions differently from the Vitis Kernel Flow. Instead of creating a Xilinx Kernel file, Vitis HLS creates a new Vivado block IP, which can be used in Vivado hardware designs. Once the block design is created in Vivado, it can be exported as a Xilinx Support Archive file, which can be imported into Vitis IDE to become a hardware platform with the proper functions to control the hardware. This hardware platform is then paired with an application written in C++ that runs on that platform. The application platform is then built and executed on the FPGA board.
 
@@ -416,40 +438,40 @@ A new design using the board's DRAM became necessary.
 
 \subsubsection{Software + DRAM}
 
-The software design using the board's DRAM was able to succesfully handle the size of the training and testing data.
-It achieved an accuracy of 86\% and when compiled using an O3 optimization it was able to achieve a 2.21x speedup compared to the original design.
+The software design using the board's DRAM was able to successfully handle the size of the training and testing data.
+It achieved an accuracy of 86\% on the test data set and when compiled using an O3 optimization, it was able to achieve a 2.21x speedup compared to the original design. The unoptimized software implementation became our baseline for all our future tests, so all speedup numbers are in comparison to the unoptimized software running on the MicroBlaze processor.
 
 \subsubsection{Software + HBM}
 
-For the software design using the HBM, due to time constraints and the desire to be with family and friends, the implementation of this algorithm was not succesfully completed.
+For the software design using the HBM, due to time constraints and technical struggles, the implementation of this algorithm was not successfully completed. We were able to explore creating hardware designs using the high-bandwidth memory, but we were unable to discern how to have the DRAM and HBM work in concert with the MicroBlaze to get all the data in the right places at the right times. This could be a further exploration of our work in the future.
 
 \subsubsection{Hardware}
 
-After trying our best at software implementations, we wanted to move on to hardware accelerated implementations.
+After trying our best at software implementations, we wanted to move on to hardware accelerated implementations. We were able to create a hardware implementation that ran on the Alveo board using only flip-flops and lookup tables to store the training and test data. With this implementation, we got extremely good performance with an increased accuracy of 89\% and a more than 150,000 times speedup compared to the unoptimized software implementation.
 
 \subsubsection{Hardware + DRAM}
 
-With the hardware accelerated version working, we wanted to try and use the DRAM on the board as the interface for the arrays of data used by the algorithm.
+With the hardware accelerated version working, we wanted to try and use the DRAM on the board as the interface for the arrays of data used by the algorithm. We successfully implemented this to a performance that was generally worse than pure flip-flops and lookup tables but still significantly better than the software implementation. We got a accuracy of 89\% and a speedup of more than 18,000 times compared to the unoptimized software implementation.
 
 \subsubsection{Hardware + HBM}
 
-For the hardware design of this algorithm using the HBM, again due to time constraints and the desire to be with family and friends, the implementation of this algorithm was also not succesfully completed.
+For the hardware design of this algorithm using the HBM, again due to time constraints and technical challenges, the implementation of this algorithm was also not succesfully completed. We did explore this possibility as with the software implementation, but the documentation for the high bandwidth memory mostly focuses on the Vitis Kernel Flow, so it was difficult to find resources for solving our problems.
 
 \section{Results}
 \label{sec:results}
 
-As we were never able to figure out the Vitis Kernel Flow, we were not able to get any results from that flow. However, we were able to get results from three of our six planned Vivado IP implementations.
+As we were never able to figure out the Vitis Kernel Flow, we were not able to get any results from that flow. However, we were able to get results from three of our six planned Vivado IP implementations. In the table, we additionally have a row showing the performance of optimized software, as optimized by the GNU C compiler (gcc) using the O3 optimization flag.
 
 \begin{figure}
   \centering
   \begin{tabular}{c|ccc}
     \toprule
-    Method    & Accuracy & Cycles  & Speedup \\
+    Method       & Accuracy & Cycles  & Speedup \\
     \midrule
-    Software  & 86\%     & 2.92e11 & 1x      \\
-    Optimized & 86\%     & 1.32e11 & 2.21x   \\
-    Hardware  & 89\%     & 1.88e6  & 155090x \\
-    DRAM      & 89\%     & 1.62e7  & 18076x  \\
+    SW + DRAM    & 86\%     & 2.92e11 & 1x      \\
+    Optimized SW & 86\%     & 1.32e11 & 2.21x   \\
+    Hardware     & 89\%     & 1.88e6  & 155090x \\
+    HW + DRAM    & 89\%     & 1.62e7  & 18076x  \\
     \bottomrule
   \end{tabular}
   \caption{Results of Vivado IP Flow}
@@ -459,9 +481,13 @@ As we were never able to figure out the Vitis Kernel Flow, we were not able to g
 \section{Conclusion}
 \label{sec:conclusion}
 
-After spending more than 20 hours trying to make the Vitis Kernel Flow work, we arrived at the conclusion that it is better to hire computer engineers with background knowledge of hardware design using Vivado Design Suite rather than having software engineers trying to settup this new flow.
-We understand that the Vitis Kernel Flow is convenient once it works, the problem is getting it to work.
-The requirements for the versions of the tools being used in the flow are too specific, making this flow not recommendable at all.
+After spending more than twenty hours trying to make the Vitis Kernel Flow work, we threw in the towel and moved on to working on the Vivado IP flow. Near the end of the project, we were able to find more documentation on using the Vitis Kernel Flow that, if we had found it earlier, we would hopefully have been more successful in this particular effort.
+We came to understand that the Vitis Kernel Flow is convenient once it works, the problem is getting it to work. It seems as though the Vitis flow offers greater plug-and-play capabilities for people experienced in the design of software kernels, while avoiding the use of Vivado IP integrator and abstracting away the complexities of hardware, but reducing the freedom of the designer with respect to these complexities.
+The installation guides for these tools could have been more clear and updated, and that would have been an additional boon to our project. As is, we cannot recommend the Vitis Kernel Flow to anyone inexperienced in the complexities of Linux kernel drivers and the design of GPU kernels, especially if the individual already has experience with hardware design flows.
+
+In terms of memory exploration, we were also unable to use the high-bandwidth memory on the Alveo board. We would have liked to compare its performance to the performance of the DRAM on the same board. All the same, we were able to show, as in lab 5, that the transfer of data from memory to processor can often be the greatest roadblock to algorithm performance. We also showed that a pure software implementation was significantly worse than a hardware implementation when it comes to FPGA design.
+
+All in all, we would recommend users of either of these flows to consider carefully what level of control they want over their design, as well as their experience with the relevant tools while making decisions on which of these flows to use. We hope that as the Vitis Kernel Flow becomes more common, it will have better documentation and guides to its use. We do continue to recommend that people seeking great algorithm performance turn to hardware acceleration as an effective way to find greater performance.
 
 % Required for proper example rendering in the compiled PDF
 % \newcount\LTGbeginlineexample
