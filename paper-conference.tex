@@ -380,8 +380,9 @@
 \section{Introduction}
 \label{sec:introduction}
 
-As hardware designs become more complex, and the allure of hardware acceleration on platforms like field-programmable gate arrays (FPGAs) becomes more attractive to corporations and others seeking to maximize the performance of their algorithms, it becomes necessary for tools to be developed that allow for more effective use of hardware acceleration. One of the tools used in this regard is Vitis HLS, Xilinx's proprietary high-level synthesis C++ tool, which uses C++ code along with a few simple preprocessor directives to created hardware designs on a higher, more conceptual level. In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow.
-Our goal was to explore this new flow, and compare its performance with the older Vivado IP Flow, implementing the \textit{k}-nearest neighbors algorithm for image recognition, using the Xilinx Alveo U280 server FPGA board with high-bandwidth memory.
+In order to better facilitate high-level synthesis of hardware designs, Xilinx developed an additional flow target for the Vitis HLS tool called the Vitis Kernel Flow.
+Our first goal was to explore this new flow, and compare its performance with the Vivado IP flow when they are used to implement a simple knn algorithm.
+The second goal was to explore different memory implementations of this algorithm using the resources found in the Alveo U280 Data Center Accelerator Card.
 
 \section{knn Algorithm}
 \label{sec:knn-algorithm}
@@ -409,17 +410,18 @@ For the Vivado IP Flow, we explored six different designs:
 
 \subsubsection{Software}
 
-In our pure software approach, we used a MicroBlaze soft processor to control the board. Unfortunately, the size of the C++ libraries we needed to include to run our existing code meant a major change to many of our functions, types, and arrays. Eventually, we ran into a wall and we were unable to get a pure software approach that only used the MicroBlaze to work. We then moved on to the next method, in order to have bit more memory to work with.
-
-\newpage
+For the software design of this algorithm, we decided to use the MicroBlaze soft processor core for its implementation.
+Given the size of both the training and testing data, the auto-generated SOC using this core and its BRAMs could not handle the size of the data.
+A new design using the board's DRAM became necessary.
 
 \subsubsection{Software + DRAM}
 
-By adding the DRAM to the design, we were able to get the space we needed to hold the C++ libraries and to hold the training and test data for the algorithm.
+The software design using the board's DRAM was able to succesfully handle the size of the training and testing data.
+It achieved an accuracy of 86\% and when compiled using an O3 optimization it was able to achieve a 2.21x speedup compared to the original design.
 
 \subsubsection{Software + HBM}
 
-We were not able to get HBM to work.
+For the software design using the HBM, due to time constraints and the desire to be with family and friends, the implementation of this algorithm was not succesfully completed.
 
 \subsubsection{Hardware}
 
@@ -431,7 +433,7 @@ With the hardware accelerated version working, we wanted to try and use the DRAM
 
 \subsubsection{Hardware + HBM}
 
-As above, we were not able to get HBM to work.
+For the hardware design of this algorithm using the HBM, again due to time constraints and the desire to be with family and friends, the implementation of this algorithm was also not succesfully completed.
 
 \section{Results}
 \label{sec:results}
@@ -457,7 +459,9 @@ As we were never able to figure out the Vitis Kernel Flow, we were not able to g
 \section{Conclusion}
 \label{sec:conclusion}
 
-In conclusion, the Vitis Kernel Flow has documentation, but it is difficult to find and understand for the new user. Additionally, the hardware accelerated algorithm implemented purely in lookup tables and flip flops ran faster that the Microblaze processor and hardware algorithm implemented with DRAM.
+After spending more than 20 hours trying to make the Vitis Kernel Flow work, we arrived at the conclusion that it is better to hire computer engineers with background knowledge of hardware design using Vivado Design Suite rather than having software engineers trying to settup this new flow.
+We understand that the Vitis Kernel Flow is convenient once it works, the problem is getting it to work.
+The requirements for the versions of the tools being used in the flow are too specific, making this flow not recommendable at all.
 
 % Required for proper example rendering in the compiled PDF
 % \newcount\LTGbeginlineexample
